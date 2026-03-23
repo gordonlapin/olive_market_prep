@@ -1,0 +1,35 @@
+name: Daily API Batch
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 毎日 UTC 0:00 = JST 9:00
+  workflow_dispatch:
+
+jobs:
+  fetch_and_commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run batch script
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+        run: python batch.py
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/
+          git diff --cached --quiet || git commit -m "chore: update batch output $(date +'%Y-%m-%d')"
+          git push
